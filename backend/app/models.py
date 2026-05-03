@@ -81,7 +81,7 @@ class HintUsage(SQLModel, table=True):
     response_id: str = Field(foreign_key="StudentResponse.response_id")
     hint_id: str = Field(foreign_key="Hint.hint_id")
 
-class LearningPorgress(SQLModel, table=True):
+class LearningProgress(SQLModel, table=True):
     progress_id: str = Field(primary_key=True, unique=True)
     strand: str = Field(max_length=30)
     sub_strand: str = Field(max_length=30)
