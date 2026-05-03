@@ -3,6 +3,9 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import PromptTemplate
 from services.adaptive_engine.graph_state import AdaptiveGraphState
 from core.config import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Initialize the Gemini LLM
 llm = ChatGoogleGenerativeAI(
@@ -28,20 +31,27 @@ hint_prompt = PromptTemplate(
 # Connect the prompt to the Gemini model
 hint_chain = hint_prompt | llm
 
-
 def generate_scaffolded_hint(state: AdaptiveGraphState) -> dict:
-    """Generates an AI-driven scaffolded hint for incorrect answers using Gemini [cite: 260-263]."""
-
-    # Run the LangChain LLM to generate the hint
-    response = hint_chain.invoke({
-        "attempt_number": state["attempt_number"],
-        "student_answer": state["student_answer"],
-        "correct_answer": state["correct_answer"]
-    })
+    """Generates an AI-driven scaffolded hint for incorrect answers using Gemini with a fallback."""
+    try:
+        # Run the LangChain LLM to generate the hint
+        response = hint_chain.invoke({
+            "attempt_number": state["attempt_number"],
+            "student_answer": state["student_answer"],
+            "correct_answer": state["correct_answer"]
+        })
+        hint_text = response.content
+    except Exception as e:
+        logger.error(f"Gemini hint generation failed: {e}")
+        # Pre-written hint fallback
+        if state["attempt_number"] == 1:
+            hint_text = "That's not quite right. Try taking a closer look at the problem and think about the steps carefully."
+        else:
+            hint_text = "Let's review the concepts. Remember to apply the correct operation and check your work!"
 
     hint_data = {
         "hint_level": state["attempt_number"],
-        "content": response.content
+        "content": hint_text
     }
 
     return {

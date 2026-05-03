@@ -1,9 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from api.schemas import TeacherCreate, TeacherRes, StudentRes
 from services import teacher_service
+from core.security import get_current_user
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 @router.post("/", response_model=TeacherRes, status_code=201)
 def create_teacher(teacher: TeacherCreate):

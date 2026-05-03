@@ -1,9 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from api.schemas import QuestionCreate, QuestionRes
 from services import question_service
+from core.security import get_current_user
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 @router.post("/", response_model=QuestionRes, status_code=201)
 def create_question(question: QuestionCreate):

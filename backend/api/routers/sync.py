@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 @router.post("/outbox", summary="Process batched offline interactions")
 async def sync_offline_outbox(
         payload: SyncBatchPayload,
-        # current_user = Depends(get_current_user) # Uncomment when frontend is ready to send JWTs
+        current_user = Depends(get_current_user)
 ):
     """
     Receives queued learning transactions, saves them to the database,

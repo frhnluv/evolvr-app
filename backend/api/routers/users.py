@@ -2,6 +2,9 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from api.schemas import UserCreate, UserRes
 from services import user_service
+from core.security import get_current_user
+from api.schemas import UserCreate, UserRes
+from services import user_service
 
 router = APIRouter()
 
@@ -12,16 +15,16 @@ def create_user(user: UserCreate):
         raise HTTPException(status_code=400, detail="Registration failed")
     return result.data[0]
 
-@router.get("/{email}", response_model=UserRes)
+@router.get("/{email}", response_model=UserRes, dependencies=[Depends(get_current_user)])
 def get_user(email: str):
     return user_service.get_user_by_email(email)
 
-@router.put("/{user_id}/password")
+@router.put("/{user_id}/password", dependencies=[Depends(get_current_user)])
 def update_password(user_id: str, new_password: str):
     result = user_service.update_user_password(user_id, new_password)
     return result.data
 
-@router.delete("/{user_id}", status_code=204)
+@router.delete("/{user_id}", status_code=204, dependencies=[Depends(get_current_user)])
 def delete_user(user_id: str):
     user_service.delete_user(user_id)
     return None
