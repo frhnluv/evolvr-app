@@ -35,7 +35,7 @@ def update_user_password(user_id: str, new_password: str):
     
     update_data = {
         "password": new_password,
-        "updatedAt": "now()" # Database will handle timestamp [cite: 18, 19]
+        "updated_at": "now()" # Database will handle timestamp [cite: 18, 19]
     }
     
     return supabase.table("User").update(update_data).eq("userID", user_id).execute()
@@ -46,13 +46,13 @@ def update_user_details(user_id: str, update_data: dict):
     if "email" in update_data:
         raise HTTPException(status_code=400, detail="Email cannot be updated through this endpoint")
     
-    update_data["updatedAt"] = "now()" # Database will handle timestamp [cite: 18, 19]
+    update_data["updated_at"] = "now()" # Database will handle timestamp [cite: 18, 19]
     
-    return supabase.table("User").update(update_data).eq("userID", user_id).execute()
+    return supabase.table("User").update(update_data).eq("user_id", user_id).execute()
 
 def delete_user(user_id: str):
     """Deletes a user from the database[cite: 15, 16]."""
-    return supabase.table("User").delete().eq("userID", user_id).execute()
+    return supabase.table("User").delete().eq("user_id", user_id).execute()
 
 # --- STUDENT OPERATIONS (For Grade 4 Learners) ---
 
@@ -62,7 +62,7 @@ def create_student(student_data: dict):
 
 def get_student_by_id(student_id: str):
     """Fetches a student's profile and performance[cite: 20, 23]."""
-    response = supabase.table("Student").select("*").eq("studentID", student_id).execute()
+    response = supabase.table("Student").select("*").eq("student_id", student_id).execute()
     if not response.data:
 
         raise HTTPException(status_code=404, detail="Student not found")
@@ -72,36 +72,19 @@ def get_all_students():
     """Retrieves all student profiles[cite: 20, 23]."""
     return supabase.table("Student").select("*").execute()
 
-def update_student_progress(student_id: str, score: float):
-    """Updates performance and sets status based on grade[cite: 23, 24, 25]."""
-    # Verification: Logic check for the score
-    if not (0 <= score <= 100):
-        raise HTTPException(status_code=400, detail="Performance score must be between 0 and 100")
-    
-    # Simple logic to determine status [cite: 25, 26]
-    status = "Exceeding Expectations" if score >= 80 else "Developing"
-    
-    update_data = {
-        "performance": score,
-        "status": status,
-        "updatedAt": "now()" # Database will handle timestamp [cite: 18, 19]
-    }
-    
-    return supabase.table("Student").update(update_data).eq("studentID", student_id).execute()
-
 def update_student_details(student_id: str, update_data: dict):
     """Updates student details like userID or teacherID[cite: 27, 28]."""
     # Verification: Ensure performance and status are not being updated here
-    if "performance" in update_data or "status" in update_data:
+    if "status" in update_data:
         raise HTTPException(status_code=400, detail="Performance and status cannot be updated through this endpoint")
     
-    update_data["updatedAt"] = "now()" # Database will handle timestamp [cite: 18, 19]
+    update_data["updated_at"] = "now()" # Database will handle timestamp [cite: 18, 19]
     
-    return supabase.table("Student").update(update_data).eq("studentID", student_id).execute()
+    return supabase.table("Student").update(update_data).eq("student_id", student_id).execute()
 
 def delete_student(student_id: str):
     """Deletes a student profile from the database[cite: 29, 30]."""
-    return supabase.table("Student").delete().eq("studentID", student_id).execute()
+    return supabase.table("Student").delete().eq("student_id", student_id).execute()
 
 # --- TEACHER OPERATIONS ---
 
@@ -111,24 +94,43 @@ def create_teacher(teacher_data: dict):
 
 def get_teacher_by_id(teacher_id: str):
     """Fetches a teacher's profile[cite: 31, 32]."""
-    response = supabase.table("Teacher").select("*").eq("teacherID", teacher_id).execute()
+    response = supabase.table("Teacher").select("*").eq("teacher_id", teacher_id).execute()
     if not response.data:
         raise HTTPException(status_code=404, detail="Teacher not found")
     return response.data[0]
 
 def get_teacher_dashboard(teacher_id: str):
     """Fetches all students assigned to a specific teacher[cite: 29, 30]."""
-    return supabase.table("Student").select("studentID, performance, status").eq("teacherID", teacher_id).execute()
+    return supabase.table("Student").select("student_id, status").eq("teacher_id", teacher_id).execute()
 
 def update_teacher_details(teacher_id: str, update_data: dict):
     """Updates teacher details like userID or schoolID[cite: 34, 35, 36, 37]."""
-    update_data["updatedAt"] = "now()" # Database will handle timestamp [cite: 18, 19]
+    update_data["updated_at"] = "now()" # Database will handle timestamp [cite: 18, 19]
     
-    return supabase.table("Teacher").update(update_data).eq("teacherID", teacher_id).execute()
+    return supabase.table("Teacher").update(update_data).eq("teacher_id", teacher_id).execute()
 
 def delete_teacher(teacher_id: str):
     """Deletes a teacher profile from the database[cite: 38, 39]."""
-    return supabase.table("Teacher").delete().eq("teacherID", teacher_id).execute()
+    return supabase.table("Teacher").delete().eq("teacher_id", teacher_id).execute()
+
+# --- SCHOOL OPERATIONS ---
+def create_school(school_data: dict):
+    return supabase.table("School").insert(school_data).execute()
+
+def get_school_by_id(school_id: str):
+    response = supabase.table("School").select("*").eq("school_id", school_id).execute()
+    if not response.data:
+        raise HTTPException(status_code=404, detail="School not found")
+    return response.data[0]
+
+def update_school_name(school_id: str, school_name: str):
+    update_data = {
+        "school_name": school_name
+    }
+    return supabase.table("School").update(update_data).eq("student_id", school_id).execute()
+
+def delete_school(school_id: str):
+    return supabase.table("School").delete().eq("school_id", school_id).execute()
 
 # --- QUESTION OPERATIONS ---
 
@@ -142,7 +144,7 @@ def get_questions_by_strand(strand_name: str):
 def add_new_question(question_data: dict):
     """Allows teachers to add new questions to the pool[cite: 48, 57]."""
     # Verification: Ensure all options and the answer are present [cite: 59, 60, 61, 62, 67]
-    required_fields = ["question", "optionA", "optionB", "optionC", "optionD", "answer"]
+    required_fields = ["question", "option_a", "option_b", "option_c", "option_d", "answer"]
     for field in required_fields:
         if not question_data.get(field):
             raise HTTPException(status_code=400, detail=f"Field '{field}' cannot be empty")
@@ -151,10 +153,66 @@ def add_new_question(question_data: dict):
 
 def update_question(question_id: str, update_data: dict):
     """Updates an existing question's details[cite: 49, 50]."""
-    update_data["updatedAt"] = "now()" # Database will handle timestamp [cite: 18, 19]
+    update_data["updated_at"] = "now()" # Database will handle timestamp [cite: 18, 19]
     
-    return supabase.table("Question").update(update_data).eq("questionID", question_id).execute()
+    return supabase.table("Question").update(update_data).eq("question_id", question_id).execute()
 
 def delete_question(question_id: str):
     """Deletes a question from the database[cite: 53, 54]."""
-    return supabase.table("Question").delete().eq("questionID", question_id).execute()
+    return supabase.table("Question").delete().eq("question_id", question_id).execute()
+
+# --- LEARNING SESSION OPERATIONS ---
+
+def create_learning_session(session_data: dict):
+    return supabase.table("LearningSession").insert(session_data).execute()
+
+def get_session_by_id(session_id: str):
+    response = supabase.table("LearningSession").select("*").eq("session_id", session_id).execute()
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return response.data[0]
+
+def end_learning_session(session_id: str):
+    return supabase.table("LearningSession").update({
+        "end_time": "now()"
+    }).eq("session_id", session_id).execute()
+
+# --- STUDENT RESPONSE (ADAPTIVE) OPERATIONS ---
+
+def create_student_response(response_data: dict):
+    """Stores a student's answer to a question."""
+    return supabase.table("StudentResponse").insert(response_data).execute()
+
+def get_responses_by_session(session_id: str):
+    return supabase.table("StudentResponse").select("*").eq("session_id", session_id).execute()
+
+def get_student_history(student_id: str):
+    return supabase.table("StudentResponse").select("*").eq("student_id", student_id).execute()
+
+# --- LEARNING PROGRESS OPERATIONS ---
+
+def upsert_learning_progress(progress_data: dict):
+    """
+    Inserts or updates mastery level.
+    Supabase supports upsert.
+    """
+    return supabase.table("LearningProgress").upsert(progress_data).execute()
+
+def get_learning_progress(student_id: str):
+    return supabase.table("LearningProgress").select("*").eq("student_id", student_id).execute()
+
+# --- HINT OPERATIONS ---
+
+def get_hints_by_question(question_id: str):
+    return supabase.table("Hint").select("*").eq("question_id", question_id).execute()
+
+# --- HINT USAGE OPERATIONS ---
+def create_hint_usage(usage_data: dict):
+    return supabase.table("HintUsage").insert(usage_data).execute()
+
+# --- ADAPTIVE DECISION OPERATIONS ---
+def create_adaptive_decision(decision_data: dict):
+    return supabase.table("AdaptiveDecision").insert(decision_data).execute()
+
+def get_decisions_by_session(session_id: str):
+    return supabase.table("AdaptiveDecision").select("*").eq("session_id", session_id).execute()
