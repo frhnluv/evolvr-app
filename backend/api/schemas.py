@@ -1,51 +1,92 @@
 # api/schemas.py
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr, ConfigDict
+from pydantic.alias_generators import to_camel
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from uuid import UUID
 
+class BaseSchema(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+        alias_generator=to_camel,
+        from_attributes=True
+    )
+
 # ==========================================
 # 1. USER & AUTHENTICATION SCHEMAS
 # ==========================================
-class UserBase(BaseModel):
-    name: str
-    email: str
-    role: str # 'student', 'teacher', 'admin', 'parent' [cite: 34-39]
 
-class StudentProfile(UserBase):
-    id: UUID
-    grade_level: int
-    current_path_id: Optional[str] = None
-    total_minutes: int = 0
+class UserBase(BaseSchema):
+    surname: str = Field(..., max_length=30)
+    other_names: str = Field(..., max_length=70)
+    email: EmailStr = Field(..., max_length=30)
 
-class TeacherProfile(UserBase):
+class UserCreate(UserBase):
+    password: str = Field(..., max_length=255)
+
+class UserRes(UserBase):
     id: UUID
+    created_at: datetime
+    updated_at: datetime
+
+class TeacherCreate(BaseSchema):
+    user_id: UUID
     school_id: UUID
+
+class TeacherRes(BaseSchema):
+    id: UUID
+    user_id: UUID
+    school_id: UUID
+
+class StudentCreate(BaseSchema):
+    user_id: UUID
+    teacher_id: UUID
+    status: str = Field(..., max_length=100)
+
+class StudentRes(BaseSchema):
+    id: UUID
+    user_id: UUID
+    teacher_id: UUID
+    status: str
 
 # ==========================================
 # 2. CONTENT & CURRICULUM SCHEMAS
 # ==========================================
-class StandardModel(BaseModel):
-    id: UUID
-    code: str  # e.g., CCSS ID [cite: 11]
-    description: str
 
-class QuestionModel(BaseModel):
-    id: UUID
-    skill_id: UUID
-    content_payload: Dict[str, Any]  # The UI rendering data
-    difficulty_parameter: float  # For IRT evaluation [cite: 628-629]
+class QuestionBase(BaseSchema):
+    strand: str = Field(..., max_length=30)
+    sub_strand: str = Field(..., max_length=30)
+    difficulty: str = Field(..., max_length=30)
+    question: str = Field(..., max_length=150)
+    option_a: str = Field(..., max_length=50)
+    option_b: str = Field(..., max_length=50)
+    option_c: str = Field(..., max_length=50)
+    option_d: str = Field(..., max_length=50)
+    answer: str = Field(..., max_length=50)
+    feedback: str = Field(..., max_length=150)
+    
+    # Adaptive properties (if used in Engine)
+    difficulty_parameter: float = 0.5
     discrimination_parameter: float = 1.0
 
-class HintPayload(BaseModel):
+class QuestionCreate(QuestionBase):
+    pass
+
+class QuestionRes(QuestionBase):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+
+class HintPayload(BaseSchema):
     hint_level: int
-    content_payload: Dict[str, Any] # Scaffolded hint data [cite: 263]
+    content_payload: Dict[str, Any]
 
 # ==========================================
 # 3. SYNC & ADAPTIVE ENGINE SCHEMAS
 # ==========================================
-class SyncRecordModel(BaseModel):
-    id: UUID  # Generated offline by Flutter
+
+class SyncRecordModel(BaseSchema):
+    id: UUID
     student_id: UUID
     question_id: UUID
     skill_id: UUID
@@ -54,50 +95,34 @@ class SyncRecordModel(BaseModel):
     ability_level: float
     recorded_at: datetime
 
-class SyncBatchPayload(BaseModel):
-    session_id: UUID # Ties to LESSON_SESSIONS [cite: 205]
+class SyncBatchPayload(BaseSchema):
+    session_id: UUID
     records: List[SyncRecordModel]
 
-class EngineFeedbackResponse(BaseModel):
-    """What the LangGraph Engine returns to the mobile app"""
+class EngineFeedbackResponse(BaseSchema):
     is_correct: bool
-    updated_ability: float # Updated via BKT/IRT [cite: 625-630]
-    next_action: str # "hint", "new_question", "lesson_complete"
+    updated_ability: float
+    next_action: str
     hint: Optional[HintPayload] = None
     next_question_id: Optional[UUID] = None
-
-class AdaptiveModelUpdate(BaseModel):
-    student_id: UUID
-    skill_vector: Dict[str, float] # The updated probabilistic state [cite: 209]
 
 # ==========================================
 # 4. REPORTING & MASTERY SCHEMAS
 # ==========================================
-class MasteryRecord(BaseModel):
+
+class MasteryRecord(BaseSchema):
     standard_id: UUID
     standard_code: str
-    mastery_level: float # Confidence score [cite: 47, 86]
+    mastery_level: float
     last_updated: datetime
 
-class StudentMasteryDashboard(BaseModel):
-    """Powers the Real-Time Mastery Dashboard [cite: 110-115]"""
+class StudentMasteryDashboard(BaseSchema):
     student_id: UUID
     student_name: str
     mastery_records: List[MasteryRecord]
-    at_risk: bool = False # Triggers Struggling Student Alerts [cite: 126-129]
+    at_risk: bool = False
 
-class ClassReportResponse(BaseModel):
+class ClassReportResponse(BaseSchema):
     class_id: UUID
     teacher_id: UUID
     students: List[StudentMasteryDashboard]
-
-# ==========================================
-# 5. ROSTERING (WEBHOOK) SCHEMAS
-# ==========================================
-class RosterDeltaPayload(BaseModel):
-    """Payload format expected from Clever/ClassLink webhooks [cite: 135-139]"""
-    sync_id: str
-    timestamp: datetime
-    created_users: List[UserBase]
-    deactivated_users: List[str] # Triggers 90-day retention countdown [cite: 142-146]
-    class_enrollments: List[Dict[str, str]]

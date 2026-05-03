@@ -37,9 +37,12 @@ async def sync_offline_outbox(
             supabase.table("responses").upsert(response_data).execute()
 
             # 2. Fetch the correct answer from the database for the engine to evaluate
-            # question_query = supabase.table("questions").select("content_payload").eq("id", str(record.question_id)).execute()
-            # correct_answer = question_query.data[0]['content_payload']['correct_answer']
-            correct_answer = "4"  # Mocked for now until DB is fully populated
+            question_query = supabase.table("questions").select("answer").eq("id", str(record.question_id)).execute()
+            if not question_query.data:
+                logger.error(f"Question {record.question_id} not found.")
+                correct_answer = ""
+            else:
+                correct_answer = question_query.data[0].get("answer", "")
 
             # 3. Setup the state for the LangGraph Engine
             initial_state = {
