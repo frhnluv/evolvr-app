@@ -12,7 +12,7 @@ class UserCreate(UserBase):
     userID: str = Field(..., max_length=255) # [cite: 5, 6]
     password: str = Field(..., max_length=255) # [cite: 13, 14]
 
-class UserResponse(UserBase):
+class UserRes(UserBase):
     userID: str
     createdAt: datetime # [cite: 16, 17]
     updatedAt: datetime # [cite: 18, 19]
@@ -24,7 +24,7 @@ class UserResponse(UserBase):
 class SchoolBase(BaseModel):
     schoolName: str = Field(..., max_length=50) # [cite: 41, 42]
 
-class SchoolResponse(SchoolBase):
+class SchoolRes(SchoolBase):
     schoolID: str # [cite: 39, 40]
     createdAt: datetime
     updatedAt: datetime
@@ -39,11 +39,11 @@ class StudentBase(BaseModel):
     teacherID: str # [cite: 29, 30]
 
 class StudentCreate(StudentBase):
-    performance: float = Field(0.0, ge=0, le=100) # [cite: 23, 24]
+    # performance: float = Field(0.0, ge=0, le=100) # [cite: 23, 24]
     status: str = Field(..., max_length=100) # [cite: 25, 26]
 
-class StudentResponse(StudentBase):
-    performance: float
+class StudentRes(StudentBase):
+    # performance: float
     status: str
     # Note: We typically include the nested User details in the frontend
     
@@ -63,8 +63,111 @@ class QuestionBase(BaseModel):
     answer: str = Field(..., max_length=50) # [cite: 67, 68]
     feedback: str = Field(..., max_length=150) # [cite: 69, 70]
 
-class QuestionResponse(QuestionBase):
+class QuestionRes(QuestionBase):
     questionID: str # [cite: 49, 50]
     
+    class Config:
+        from_attributes = True
+
+# --- LEARNING SESSION SCHEMAS ---
+class LearningSessionBase(BaseModel):
+    studentID: str = Field(..., max_length=255)
+
+class LearningSessionCreate(LearningSessionBase):
+    pass
+
+class LearningSessionRes(LearningSessionBase):
+    sessionID: str
+    startTime: datetime
+    endTime: Optional[datetime] = None
+    offlineFlag: bool
+
+    class Config:
+        from_attributes = True
+
+# --- STUDENT RESPONSE (ADAPTIVE) SCHEMAS ---
+class StudentResponseBase(BaseModel):
+    studentID: str = Field(..., max_length=255)
+    questionID: str = Field(..., max_length=255)
+    sessionID: str = Field(..., max_length=255)
+
+    selectedAnswer: str = Field(..., max_length=50)
+    isCorrect: bool
+
+class StudentResponseCreate(StudentResponseBase):
+    responseTime: Optional[int] = None
+    attemptNumber: Optional[int] = 1
+
+class StudentResponseRes(StudentResponseBase):
+    responseID: str
+    responseTime: Optional[int]
+    attemptNumber: int
+    createdAt: datetime
+
+    class Config:
+        from_attributes = True
+
+# --- HINT SCHEMAS ---
+class HintBase(BaseModel):
+    questionID: str = Field(..., max_length=255)
+    hintLevel: int = Field(..., ge=1, le=5)
+    hintText: str = Field(..., max_length=255)
+
+class HintCreate(HintBase):
+    pass
+
+class HintResponse(HintBase):
+    hintID: str
+
+    class Config:
+        from_attributes = True
+
+# --- HINT USAGE SCHEMAS ---
+class HintUsageBase(BaseModel):
+    responseID: str = Field(..., max_length=255)
+    hintID: str = Field(..., max_length=255)
+
+class HintUsageCreate(HintUsageBase):
+    pass
+
+class HintUsageResponse(HintUsageBase):
+    usageID: str
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True
+
+# --- LEARNING PROGRESS SCHEMAS ---
+class LearningProgressBase(BaseModel):
+    studentID: str = Field(..., max_length=255)
+    strand: str = Field(..., max_length=30)
+    subStrand: str = Field(..., max_length=30)
+
+class LearningProgressCreate(LearningProgressBase):
+    masteryLevel: float = Field(0.0, ge=0, le=100)
+
+class LearningProgressResponse(LearningProgressBase):
+    progressID: str
+    masteryLevel: float
+    lastUpdated: datetime
+
+    class Config:
+        from_attributes = True
+
+# --- ADAPTIVE DECISION SCHEMAS ---
+class AdaptiveDecisionBase(BaseModel):
+    previous_difficulty: str = Field(..., max_length=50)
+    new_difficulty: str = Field(..., max_length=50)
+    reason: str = Field(..., max_length=50)
+    student_id: str = Field(..., max_length=255)
+
+class AdaptiveDecisionCreate(AdaptiveDecisionBase):
+    session_id: str = Field(max_length=255)
+    created_at: datetime
+    updated_at: datetime
+
+class AdaptiveDecisionRes(AdaptiveDecisionBase):
+    decision_id: str = Field(..., max_length=255)
+
     class Config:
         from_attributes = True
