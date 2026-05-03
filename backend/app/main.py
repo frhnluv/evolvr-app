@@ -44,12 +44,10 @@ def read_student_progress(student_id: str):
     """
     return crud.get_student_by_id(student_id)
 
-@app.put("/students/{student_id}/performance", tags=["Students"])
-def update_student_score(student_id: str, score: float):
-    """
-    Updates a student's performance score (0-100) and status.
-    """
-    return crud.update_student_progress(student_id, score)
+@app.get("/students/{student_id}/progress", tags=["Adaptive"])
+def get_student_progress(student_id: str):
+    result = crud.get_learning_progress(student_id)
+    return result.data
 
 # --- TEACHER ENDPOINTS ---
 
@@ -77,3 +75,59 @@ def create_question(question: schemas.QuestionBase):
     """
     result = crud.add_new_question(question.model_dump())
     return result.data[0]
+
+# --- LEARNING SESSION ENDPOINTS ---
+
+@app.post("/sessions/", response_model=schemas.LearningSessionResponse, tags=["Adaptive"])
+def start_session(session: schemas.LearningSessionCreate):
+    result = crud.create_learning_session(session.model_dump())
+    return result.data[0]
+
+@app.put("/sessions/{session_id}/end", tags=["Adaptive"])
+def end_session(session_id: str):
+    return crud.end_learning_session(session_id)
+
+# --- STUDENT RESPONSE ENDPOINTS ---
+
+@app.post("/responses/", response_model=schemas.StudentResponseResponse, tags=["Adaptive"])
+def submit_response(response: schemas.StudentResponseCreate):
+    result = crud.create_student_response(response.model_dump())
+    return result.data[0]
+
+@app.get("/sessions/{session_id}/responses", tags=["Adaptive"])
+def get_session_responses(session_id: str):
+    result = crud.get_responses_by_session(session_id)
+    return result.data
+
+# --- LEARNING PROGRESS ENDPOINTS ---
+
+@app.get("/students/{student_id}/progress", tags=["Adaptive"])
+def get_progress(student_id: str):
+    result = crud.get_learning_progress(student_id)
+    return result.data
+
+# --- HINT ENDPOINTS ---
+
+@app.get("/questions/{question_id}/hints", tags=["Hints"])
+def get_hints(question_id: str):
+    result = crud.get_hints_by_question(question_id)
+    return result.data
+
+# --- HINT USAGE ENDPOINT ---
+
+@app.post("/hint-usage/", response_model=schemas.HintUsageResponse, tags=["Hints"])
+def use_hint(usage: schemas.HintUsageCreate):
+    result = crud.create_hint_usage(usage.model_dump())
+    return result.data[0]
+
+# --- ADAPTIVE DECISION ENDPOINTS ---
+
+@app.post("/decisions/", response_model=schemas.AdaptiveDecisionResponse, tags=["Adaptive"])
+def log_decision(decision: schemas.AdaptiveDecisionCreate):
+    result = crud.create_adaptive_decision(decision.model_dump())
+    return result.data[0]
+
+@app.get("/sessions/{session_id}/decisions", tags=["Adaptive"])
+def get_session_decisions(session_id: str):
+    result = crud.get_decisions_by_session(session_id)
+    return result.data
