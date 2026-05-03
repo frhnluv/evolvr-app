@@ -10,3 +10,6 @@ pytest
 pytest-asyncio
 httpx
 pytest-mock
+uvicorn[standard]
+gunicorn
+pydantic[email]
