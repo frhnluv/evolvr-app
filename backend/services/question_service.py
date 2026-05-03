@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from core.database import supabase
 
 def get_questions_by_strand(strand_name: str):
-    response = supabase.table("questions").select("*").eq("strand", strand_name).execute() 
+    response = supabase.table("Question").select("*").eq("strand", strand_name).execute() 
     if not response.data:
         raise HTTPException(status_code=404, detail=f"No questions found for {strand_name}")
     return response.data
@@ -13,12 +13,12 @@ def add_new_question(question_data: dict):
         if not question_data.get(field):
             raise HTTPException(status_code=400, detail=f"Field '{field}' cannot be empty")
             
-    return supabase.table("questions").insert(question_data).execute()
+    return supabase.table("Question").insert(question_data).execute()
 
 def update_question(question_id: str, update_data: dict):
     update_data["updated_at"] = "now()" 
     
-    return supabase.table("questions").update(update_data).eq("id", question_id).execute()
+    return supabase.table("Question").update(update_data).eq("question_id", question_id).execute()
 
 def delete_question(question_id: str):
-    return supabase.table("questions").delete().eq("id", question_id).execute()
+    return supabase.table("Question").delete().eq("question_id", question_id).execute()

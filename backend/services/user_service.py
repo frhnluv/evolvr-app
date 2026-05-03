@@ -6,10 +6,10 @@ def create_user(user_data: dict):
     if not user_data["email"]:
         raise HTTPException(status_code=400, detail="Email is required")
     
-    return supabase.table("users").insert(user_data).execute() 
+    return supabase.table("User").insert(user_data).execute() 
 
 def get_user_by_email(email: str):
-    response = supabase.table("users").select("*").eq("email", email).execute()
+    response = supabase.table("User").select("*").eq("email", email).execute()
     if not response.data:
         raise HTTPException(status_code=404, detail="User not found")
     return response.data[0]
@@ -23,7 +23,7 @@ def update_user_password(user_id: str, new_password: str):
         "updated_at": "now()" 
     }
     
-    return supabase.table("users").update(update_data).eq("id", user_id).execute()
+    return supabase.table("User").update(update_data).eq("user_id", user_id).execute()
 
 def update_user_details(user_id: str, update_data: dict):
     if "email" in update_data:
@@ -31,7 +31,7 @@ def update_user_details(user_id: str, update_data: dict):
     
     update_data["updated_at"] = "now()" 
     
-    return supabase.table("users").update(update_data).eq("id", user_id).execute()
+    return supabase.table("User").update(update_data).eq("user_id", user_id).execute()
 
 def delete_user(user_id: str):
-    return supabase.table("users").delete().eq("id", user_id).execute()
+    return supabase.table("User").delete().eq("user_id", user_id).execute()

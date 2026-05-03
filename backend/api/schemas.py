@@ -29,6 +29,19 @@ class UserRes(UserBase):
     created_at: datetime
     updated_at: datetime
 
+# --- SCHOOL SCHEMAS ---
+class SchoolBase(BaseSchema):
+    school_name: str = Field(..., max_length=50)
+
+class SchoolCreate(SchoolBase):
+    pass
+
+class SchoolRes(SchoolBase):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+
+# --- TEACHER SCHEMAS ---
 class TeacherCreate(BaseSchema):
     user_id: UUID
     school_id: UUID
@@ -38,6 +51,7 @@ class TeacherRes(BaseSchema):
     user_id: UUID
     school_id: UUID
 
+# --- STUDENT SCHEMAS ---
 class StudentCreate(BaseSchema):
     user_id: UUID
     teacher_id: UUID
@@ -77,9 +91,30 @@ class QuestionRes(QuestionBase):
     created_at: datetime
     updated_at: datetime
 
-class HintPayload(BaseSchema):
-    hint_level: int
-    content_payload: Dict[str, Any]
+# --- HINT SCHEMAS ---
+class HintBase(BaseSchema):
+    question_id: UUID
+    hint_level: int = Field(..., ge=1, le=5)
+    hint_text: str = Field(..., max_length=255)
+
+class HintCreate(HintBase):
+    pass
+
+class HintResponse(HintBase):
+    id: UUID
+
+# --- HINT USAGE SCHEMAS ---
+class HintUsageBase(BaseSchema):
+    response_id: UUID
+    hint_id: UUID
+
+class HintUsageCreate(HintUsageBase):
+    pass
+
+class HintUsageResponse(HintUsageBase):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
 
 # ==========================================
 # 3. SYNC & ADAPTIVE ENGINE SCHEMAS
@@ -99,6 +134,10 @@ class SyncBatchPayload(BaseSchema):
     session_id: UUID
     records: List[SyncRecordModel]
 
+class HintPayload(BaseSchema):
+    hint_level: int
+    content_payload: Dict[str, Any]
+
 class EngineFeedbackResponse(BaseSchema):
     is_correct: bool
     updated_ability: float
@@ -106,9 +145,69 @@ class EngineFeedbackResponse(BaseSchema):
     hint: Optional[HintPayload] = None
     next_question_id: Optional[UUID] = None
 
+# --- LEARNING SESSION SCHEMAS ---
+class LearningSessionBase(BaseSchema):
+    student_id: UUID
+
+class LearningSessionCreate(LearningSessionBase):
+    pass
+
+class LearningSessionRes(LearningSessionBase):
+    id: UUID
+    start_time: datetime
+    end_time: Optional[datetime] = None
+    device_offline_flag: bool
+
+# --- STUDENT RESPONSE SCHEMAS ---
+class StudentResponseBase(BaseSchema):
+    student_id: UUID
+    question_id: UUID
+    session_id: UUID
+    selected_answer: str = Field(..., max_length=50)
+    is_correct: bool
+
+class StudentResponseCreate(StudentResponseBase):
+    response_time: Optional[int] = None
+    attempt_number: Optional[int] = 1
+
+class StudentResponseRes(StudentResponseBase):
+    id: UUID
+    response_time: Optional[int]
+    attempt_number: int
+    created_at: datetime
+
+# --- ADAPTIVE DECISION SCHEMAS ---
+class AdaptiveDecisionBase(BaseSchema):
+    previous_difficulty: str = Field(..., max_length=50)
+    new_difficulty: str = Field(..., max_length=50)
+    reason: str = Field(..., max_length=50)
+    student_id: UUID
+    session_id: UUID
+
+class AdaptiveDecisionCreate(AdaptiveDecisionBase):
+    pass
+
+class AdaptiveDecisionRes(AdaptiveDecisionBase):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+
 # ==========================================
 # 4. REPORTING & MASTERY SCHEMAS
 # ==========================================
+
+class LearningProgressBase(BaseSchema):
+    student_id: UUID
+    strand: str = Field(..., max_length=30)
+    sub_strand: str = Field(..., max_length=30)
+
+class LearningProgressCreate(LearningProgressBase):
+    mastery_level: float = Field(0.0, ge=0, le=100)
+
+class LearningProgressResponse(LearningProgressBase):
+    id: UUID
+    mastery_level: float
+    last_updated: datetime
 
 class MasteryRecord(BaseSchema):
     standard_id: UUID
