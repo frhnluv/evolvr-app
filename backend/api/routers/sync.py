@@ -25,28 +25,18 @@ async def sync_offline_outbox(
 
     for record in payload.records:
         try:
-            # 1. Save the student's raw response to Supabase
-            response_data = {
-                "id": str(record.id),
-                "lesson_session_id": str(payload.session_id),
-                "question_id": str(record.question_id),
-                "attempt_number": record.attempt_number,
-                "interaction_data": {"student_answer": record.student_answer},
-                "recorded_time": record.recorded_at.isoformat()
-            }
-            supabase.table("responses").upsert(response_data).execute()
-
-            # 2. Fetch the correct answer from the database for the engine to evaluate
-            question_query = supabase.table("questions").select("answer").eq("id", str(record.question_id)).execute()
+            # 1. Fetch the correct answer from the database for the engine to evaluate
+            question_query = supabase.table("questions").select("content_payload").eq("id", str(record.question_id)).execute()
             if not question_query.data:
                 logger.error(f"Question {record.question_id} not found.")
                 correct_answer = ""
             else:
-                correct_answer = question_query.data[0].get("answer", "")
+                payload_data = question_query.data[0].get("content_payload", {})
+                correct_answer = payload_data.get("answer", "")
 
-            # 3. Setup the state for the LangGraph Engine
+            # 2. Setup the state for the LangGraph Engine
             initial_state = {
-                "student_id": str(record.student_id),
+                "student_id": str(payload.student_id),
                 "skill_id": str(record.skill_id),
                 "question_id": str(record.question_id),
                 "student_answer": record.student_answer,
@@ -58,8 +48,22 @@ async def sync_offline_outbox(
                 "next_question_id": None
             }
 
-            # 4. Run the Engine!
+            # 3. Run the Engine!
             final_state = adaptive_engine.invoke(initial_state)
+
+            # 4. Save the student's raw response to Supabase
+            response_data = {
+                "id": str(record.id),
+                "lesson_session_id": str(payload.session_id),
+                "question_id": str(record.question_id),
+                "attempt_number": record.attempt_number,
+                "is_correct": final_state["is_correct"],
+                "interaction_data": {"student_answer": record.student_answer},
+                "recorded_time": record.recorded_at.isoformat(),
+                "time_spent_seconds": record.time_spent_seconds,
+                "hint_used_id": record.hint_used_id
+            }
+            supabase.table("responses").upsert(response_data).execute()
 
             # 5. Format the feedback to send back to the Flutter app
             feedback = EngineFeedbackResponse(
@@ -74,8 +78,15 @@ async def sync_offline_outbox(
             engine_feedbacks[str(record.id)] = feedback
             successful_syncs.append(str(record.id))
 
-            # 6. Update the student's new ability/confidence in the DB (BKT Tracking) [cite: 625-627]
-            # supabase.table("student_skill_metrics").upsert({...}).execute()
+            # 6. Update the student's new ability/confidence in the DB (BKT Tracking)
+            metrics_data = {
+                "student_id": str(payload.student_id),
+                "skill_id": str(record.skill_id),
+                "ability_level": final_state["ability_level"],
+                "mastery_probability": final_state.get("confidence_score", 0.0),
+                "last_assessed": "now()"
+            }
+            supabase.table("student_skill_metrics").upsert(metrics_data, on_conflict="student_id, skill_id").execute()
 
         except Exception as e:
             logger.error(f"Failed to sync record {record.id}: {str(e)}")

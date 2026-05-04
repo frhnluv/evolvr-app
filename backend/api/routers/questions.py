@@ -13,9 +13,9 @@ def create_question(question: QuestionCreate):
         raise HTTPException(status_code=400, detail="Creation failed")
     return result.data[0]
 
-@router.get("/strand/{strand_name}", response_model=List[QuestionRes])
-def get_questions_by_strand(strand_name: str):
-    return question_service.get_questions_by_strand(strand_name)
+@router.get("/skill/{skill_id}", response_model=List[QuestionRes])
+def get_questions_by_skill(skill_id: str):
+    return question_service.get_questions_by_skill(skill_id)
 
 @router.delete("/{question_id}", status_code=204)
 def delete_question(question_id: str):

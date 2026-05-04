@@ -3,8 +3,6 @@ from typing import List
 from api.schemas import UserCreate, UserRes
 from services import user_service
 from core.security import get_current_user
-from api.schemas import UserCreate, UserRes
-from services import user_service
 
 router = APIRouter()
 
@@ -19,10 +17,7 @@ def create_user(user: UserCreate):
 def get_user(email: str):
     return user_service.get_user_by_email(email)
 
-@router.put("/{user_id}/password", dependencies=[Depends(get_current_user)])
-def update_password(user_id: str, new_password: str):
-    result = user_service.update_user_password(user_id, new_password)
-    return result.data
+
 
 @router.delete("/{user_id}", status_code=204, dependencies=[Depends(get_current_user)])
 def delete_user(user_id: str):

@@ -23,10 +23,10 @@ def test_sync_offline_outbox(client, mocker):
         
     payload = {
         "sessionId": "123e4567-e89b-12d3-a456-426614174000",
+        "studentId": "123e4567-e89b-12d3-a456-426614174003",
         "records": [
             {
                 "id": "123e4567-e89b-12d3-a456-426614174002",
-                "studentId": "123e4567-e89b-12d3-a456-426614174003",
                 "questionId": "123e4567-e89b-12d3-a456-426614174004",
                 "skillId": "123e4567-e89b-12d3-a456-426614174005",
                 "studentAnswer": "4",

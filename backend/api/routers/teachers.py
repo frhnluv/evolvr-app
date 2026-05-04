@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
-from typing import List
-from api.schemas import TeacherCreate, TeacherRes, StudentRes
+from typing import List, Any
+from api.schemas import TeacherCreate, TeacherRes
 from services import teacher_service
 from core.security import get_current_user
 
@@ -17,10 +17,10 @@ def create_teacher(teacher: TeacherCreate):
 def get_teacher(teacher_id: str):
     return teacher_service.get_teacher_by_id(teacher_id)
 
-@router.get("/{teacher_id}/dashboard", response_model=List[StudentRes])
+@router.get("/{teacher_id}/dashboard", response_model=List[Any])
 def get_dashboard(teacher_id: str):
     result = teacher_service.get_teacher_dashboard(teacher_id)
-    return result.data
+    return result
 
 @router.delete("/{teacher_id}", status_code=204)
 def delete_teacher(teacher_id: str):

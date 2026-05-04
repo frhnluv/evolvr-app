@@ -17,9 +17,10 @@ class BaseSchema(BaseModel):
 # ==========================================
 
 class UserBase(BaseSchema):
-    surname: str = Field(..., max_length=30)
-    other_names: str = Field(..., max_length=70)
-    email: EmailStr = Field(..., max_length=30)
+    name: str = Field(..., max_length=100)
+    email: EmailStr = Field(..., max_length=100)
+    role: str = Field(..., description="student, teacher, or admin")
+    school_id: Optional[UUID] = None
 
 class UserCreate(UserBase):
     password: str = Field(..., max_length=255)
@@ -27,11 +28,10 @@ class UserCreate(UserBase):
 class UserRes(UserBase):
     id: UUID
     created_at: datetime
-    updated_at: datetime
 
-# --- SCHOOL SCHEMAS ---
 class SchoolBase(BaseSchema):
-    school_name: str = Field(..., max_length=50)
+    name: str = Field(..., max_length=100)
+    district_id: Optional[UUID] = None
 
 class SchoolCreate(SchoolBase):
     pass
@@ -39,49 +39,33 @@ class SchoolCreate(SchoolBase):
 class SchoolRes(SchoolBase):
     id: UUID
     created_at: datetime
-    updated_at: datetime
 
-# --- TEACHER SCHEMAS ---
 class TeacherCreate(BaseSchema):
     user_id: UUID
-    school_id: UUID
 
 class TeacherRes(BaseSchema):
     id: UUID
     user_id: UUID
-    school_id: UUID
 
-# --- STUDENT SCHEMAS ---
 class StudentCreate(BaseSchema):
     user_id: UUID
-    teacher_id: UUID
-    status: str = Field(..., max_length=100)
+    grade_level: Optional[int] = None
+    current_path_id: Optional[str] = None
+    total_minutes: int = 0
 
-class StudentRes(BaseSchema):
+class StudentRes(StudentCreate):
     id: UUID
-    user_id: UUID
-    teacher_id: UUID
-    status: str
 
 # ==========================================
 # 2. CONTENT & CURRICULUM SCHEMAS
 # ==========================================
 
 class QuestionBase(BaseSchema):
-    strand: str = Field(..., max_length=30)
-    sub_strand: str = Field(..., max_length=30)
-    difficulty: str = Field(..., max_length=30)
-    question: str = Field(..., max_length=150)
-    option_a: str = Field(..., max_length=50)
-    option_b: str = Field(..., max_length=50)
-    option_c: str = Field(..., max_length=50)
-    option_d: str = Field(..., max_length=50)
-    answer: str = Field(..., max_length=50)
-    feedback: str = Field(..., max_length=150)
-    
-    # Adaptive properties (if used in Engine)
-    difficulty_parameter: float = 0.5
+    lesson_id: UUID
+    skill_id: UUID
+    difficulty_parameter: float = 0.0
     discrimination_parameter: float = 1.0
+    content_payload: Dict[str, Any]
 
 class QuestionCreate(QuestionBase):
     pass
@@ -89,32 +73,18 @@ class QuestionCreate(QuestionBase):
 class QuestionRes(QuestionBase):
     id: UUID
     created_at: datetime
-    updated_at: datetime
 
-# --- HINT SCHEMAS ---
 class HintBase(BaseSchema):
     question_id: UUID
     hint_level: int = Field(..., ge=1, le=5)
-    hint_text: str = Field(..., max_length=255)
+    content_payload: Dict[str, Any]
 
 class HintCreate(HintBase):
     pass
 
-class HintResponse(HintBase):
-    id: UUID
-
-# --- HINT USAGE SCHEMAS ---
-class HintUsageBase(BaseSchema):
-    response_id: UUID
-    hint_id: UUID
-
-class HintUsageCreate(HintUsageBase):
-    pass
-
-class HintUsageResponse(HintUsageBase):
+class HintRes(HintBase):
     id: UUID
     created_at: datetime
-    updated_at: datetime
 
 # ==========================================
 # 3. SYNC & ADAPTIVE ENGINE SCHEMAS
@@ -122,16 +92,18 @@ class HintUsageResponse(HintUsageBase):
 
 class SyncRecordModel(BaseSchema):
     id: UUID
-    student_id: UUID
     question_id: UUID
     skill_id: UUID
-    student_answer: str
+    student_answer: Any # Could be string, dict, etc based on content_payload
     attempt_number: int
     ability_level: float
     recorded_at: datetime
+    time_spent_seconds: Optional[int] = None
+    hint_used_id: Optional[UUID] = None
 
 class SyncBatchPayload(BaseSchema):
     session_id: UUID
+    student_id: UUID
     records: List[SyncRecordModel]
 
 class HintPayload(BaseSchema):
@@ -145,68 +117,58 @@ class EngineFeedbackResponse(BaseSchema):
     hint: Optional[HintPayload] = None
     next_question_id: Optional[UUID] = None
 
-# --- LEARNING SESSION SCHEMAS ---
-class LearningSessionBase(BaseSchema):
+class LessonSessionBase(BaseSchema):
     student_id: UUID
+    lesson_id: Optional[UUID] = None
+    state: str = "ACTIVE"
+    score: Optional[int] = None
 
-class LearningSessionCreate(LearningSessionBase):
+class LessonSessionCreate(LessonSessionBase):
     pass
 
-class LearningSessionRes(LearningSessionBase):
+class LessonSessionRes(LessonSessionBase):
     id: UUID
-    start_time: datetime
-    end_time: Optional[datetime] = None
-    device_offline_flag: bool
+    start_timestamp: datetime
+    synced_at: Optional[datetime] = None
 
-# --- STUDENT RESPONSE SCHEMAS ---
-class StudentResponseBase(BaseSchema):
-    student_id: UUID
+class ResponseBase(BaseSchema):
+    lesson_session_id: UUID
     question_id: UUID
-    session_id: UUID
-    selected_answer: str = Field(..., max_length=50)
     is_correct: bool
+    interaction_data: Optional[Dict[str, Any]] = None
+    attempt_number: int = 1
+    time_spent_seconds: Optional[int] = None
+    hint_used_id: Optional[UUID] = None
 
-class StudentResponseCreate(StudentResponseBase):
-    response_time: Optional[int] = None
-    attempt_number: Optional[int] = 1
-
-class StudentResponseRes(StudentResponseBase):
-    id: UUID
-    response_time: Optional[int]
-    attempt_number: int
-    created_at: datetime
-
-# --- ADAPTIVE DECISION SCHEMAS ---
-class AdaptiveDecisionBase(BaseSchema):
-    previous_difficulty: str = Field(..., max_length=50)
-    new_difficulty: str = Field(..., max_length=50)
-    reason: str = Field(..., max_length=50)
-    student_id: UUID
-    session_id: UUID
-
-class AdaptiveDecisionCreate(AdaptiveDecisionBase):
+class ResponseCreate(ResponseBase):
     pass
 
-class AdaptiveDecisionRes(AdaptiveDecisionBase):
+class ResponseRes(ResponseBase):
     id: UUID
-    created_at: datetime
-    updated_at: datetime
+    recorded_time: datetime
 
 # ==========================================
 # 4. REPORTING & MASTERY SCHEMAS
 # ==========================================
 
-class LearningProgressBase(BaseSchema):
+class StudentSkillMetricBase(BaseSchema):
     student_id: UUID
-    strand: str = Field(..., max_length=30)
-    sub_strand: str = Field(..., max_length=30)
+    skill_id: UUID
+    ability_level: float = 0.0
+    mastery_probability: float = 0.0
+    struggle_flag: bool = False
 
-class LearningProgressCreate(LearningProgressBase):
-    mastery_level: float = Field(0.0, ge=0, le=100)
-
-class LearningProgressResponse(LearningProgressBase):
+class StudentSkillMetricRes(StudentSkillMetricBase):
     id: UUID
-    mastery_level: float
+    last_assessed: datetime
+
+class StudentMasteryBase(BaseSchema):
+    student_id: UUID
+    standard_id: UUID
+    mastery_level: float = 0.0
+
+class StudentMasteryRes(StudentMasteryBase):
+    id: UUID
     last_updated: datetime
 
 class MasteryRecord(BaseSchema):

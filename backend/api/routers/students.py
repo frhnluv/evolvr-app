@@ -22,10 +22,7 @@ def get_all_students():
     result = student_service.get_all_students()
     return result.data
 
-@router.put("/{student_id}/progress")
-def update_progress(student_id: str, score: float):
-    result = student_service.update_student_progress(student_id, score)
-    return result.data
+
 
 @router.delete("/{student_id}", status_code=204)
 def delete_student(student_id: str):

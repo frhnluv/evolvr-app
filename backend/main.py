@@ -8,9 +8,8 @@ from core.security import get_current_user
 
 from api.routers import (
     sync, users, students, teachers, questions,
-    schools, learning_sessions, student_responses,
-    learning_progress, hints, adaptive_decisions,
-    reports, webhooks
+    schools, lesson_sessions, responses,
+    student_mastery, hints, reports, webhooks
 )
 # Initialize FastAPI
 app = FastAPI(
@@ -58,11 +57,10 @@ app.include_router(students.router, prefix="/api/students", tags=["Students"])
 app.include_router(teachers.router, prefix="/api/teachers", tags=["Teachers"])
 app.include_router(questions.router, prefix="/api/questions", tags=["Questions"])
 app.include_router(schools.router, prefix="/api/schools", tags=["Schools"])
-app.include_router(learning_sessions.router, prefix="/api/sessions", tags=["Sessions"])
-app.include_router(student_responses.router, prefix="/api/responses", tags=["Responses"])
-app.include_router(learning_progress.router, prefix="/api/progress", tags=["Progress"])
+app.include_router(lesson_sessions.router, prefix="/api/sessions", tags=["Sessions"])
+app.include_router(responses.router, prefix="/api/responses", tags=["Responses"])
+app.include_router(student_mastery.router, prefix="/api/mastery", tags=["Mastery"])
 app.include_router(hints.router, prefix="/api/hints", tags=["Hints"])
-app.include_router(adaptive_decisions.router, prefix="/api/decisions", tags=["Decisions"])
 app.include_router(reports.router, prefix="/api/reports", tags=["Reports"])
 app.include_router(webhooks.router, prefix="/api/webhooks", tags=["Webhooks"])
 app.include_router(sync.router, prefix="/api/sync", tags=["Sync"])
