@@ -1,5 +1,6 @@
 # core/config.py
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Adaptive Backend"
@@ -11,8 +12,10 @@ class Settings(BaseSettings):
     # SMTP_SERVER: str = ""
     # CLEVER_SECRET: str = ""
 
-    class Config:
-        env_file = ".env"
+    model_config = ConfigDict(
+        env_file = ".env",
         case_sensitive = True
+    )
+
 
 settings = Settings()
